@@ -13,7 +13,9 @@ let todo2 = [
     },
     {
         text: "Do something 2",
-        _id: new ObjectID
+        _id: new ObjectID,
+        completed: true,
+        completedAt: 333
     }
 ]
 
@@ -83,7 +85,7 @@ describe('GET/ todo', () => {
 
 });
 
-describe('GET/ todo/id', () => {
+describe('GET/ todo/:id', () => {
 
     it('Should give back the to do with correct id', (done) => {
 
@@ -111,6 +113,101 @@ describe('GET/ todo/id', () => {
             .get('/todo/123')
             .expect(404)
             .end(done);
+
+    });
+
+});
+
+describe('Delete /todo/:id', () => {
+
+    let idHex = todo2[1]._id.toHexString();
+
+    it('Should delete the requested item and return it.', (done) => {
+
+        request(app)
+            .delete(`/todo/${idHex}`)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo._id).toBe(idHex);
+
+                Todo.findById(idHex).then(result => {
+                    expect(result).toNotExist();
+                }).catch(err => console.log(err));
+
+            }).end(done);
+
+    });
+
+    it('Should return 404 when the id do no exist.', (done) => {
+
+        let id = "5a2cbf8e88d0cc26d0";
+
+        request(app)
+            .delete(`/todo${id}`)
+            .expect(404)
+            .end(done);
+
+    });
+
+    it("Should return 404 when the id is invalid.", done => {
+      let id = "123";
+
+      request(app)
+        .delete(`/todo${id}`)
+        .expect(404)
+        .end(done);
+    });
+
+});
+
+describe('PATCH /todo/:id', () => {
+
+    it('Should update the todo', (done) => {
+
+        //grab id of first item
+        let idHex = todo2[0]._id.toHexString();
+        //update text, set completed true
+
+        let text = {
+            text: "This is updated from text 1",
+            completed: true
+        }
+
+        request(app)
+            .patch(`/todo/${idHex}`)
+            .send(text)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo.text).toBe(text.text);
+                expect(res.body.todo.completed).toBe(true);
+                expect(res.body.todo.completedAt).toBeA('number');
+            }).end(done);
+
+
+    });
+
+    it('Should cleat the completedAt when todo is not completed', (done) => {
+
+        //grab id of first item
+        let idHex = todo2[1]._id.toHexString();
+        //update text, set completed false
+        let text = {
+            text: "This is updated from text 1",
+            completed: false
+        }
+        //200
+        request(app)
+          .patch(`/todo/${idHex}`)
+          .send(text)
+          .expect(200)
+          .expect(res => {
+            expect(res.body.todo.text).toBe(text.text);
+            expect(res.body.todo.completed).toBe(false);
+            expect(res.body.todo.completedAt).toNotExist();
+          })
+          .end(done);
+        //text is changed, completed false, completdAt id numm .toNotExist
+        
 
     });
 
