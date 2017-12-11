@@ -1,6 +1,6 @@
 require('./config/config.js');
 const express = require('express');
-const bodyPaerser = require("body-parser");
+const bodyParser = require("body-parser");
 const _ = require('lodash');
 
 const { mongoose } = require("./db/mongoose");
@@ -13,7 +13,7 @@ const app = express();
 
 const port = process.env.PORT;
 
-app.use(bodyPaerser.json());
+app.use(bodyParser.json());
 
 app.post('/todo', (req, res) => {
     let newTodo = new Todo({
@@ -51,7 +51,7 @@ app.get('/todo/:id', (req, res) => {
 
 app.delete('/todo/:id', (req, res) => {
 
-    var id = req.params.id;
+    let id = req.params.id;
 
     if(!ObjectID.isValid(id)) return res.status(404).send('Bad request');
 
@@ -83,6 +83,32 @@ app.patch('/todo/:id', (req, res) => {
         if(!todo) return res.status(404).send();
         res.send({todo});
     }).catch(e => console.log(e));
+
+});
+
+app.post('/users', (req, res) => {
+
+    let body = _.pick(req.body, ['email', 'password']);
+
+    console.log(body);
+
+    let newUser = new User(body);
+
+    console.log(newUser);
+
+    newUser
+        .save()
+        .then(() => {
+            console.log('saved without token');
+            return newUser.generateAuthToken();
+        })
+        .then((token) => {
+            console.log(`token is:`, token );
+            res.header('x-auth', token).send(newUser);
+        })
+        .catch(err => {
+            res.status(400).send(err);
+        });
 
 });
 
