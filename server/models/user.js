@@ -1,39 +1,55 @@
 const mongoose = require("mongoose");
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
+const _ = require('lodash');
 
-let UserSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    minlength: 1,
-    unique: true,
-    validate: {
-      validator: value => {
-        return validator.isEmail(value);
-      },
-      message: "{VALUE} is nor a valid email"
-    }
-  },
-
-  password: {
-    type: String,
-    require: true,
-    minlength: 6
-  },
-
-  tokens: [{
-    access: {
+let UserSchema = new mongoose.Schema(
+  {
+    email: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
+      minlength: 1,
+      unique: true,
+      validate: {
+        validator: value => {
+          return validator.isEmail(value);
+        },
+        message: "{VALUE} is nor a valid email"
+      }
     },
-    token: {
+
+    password: {
       type: String,
-      required: true
-    }
-  }]
-});
+      require: true,
+      minlength: 6
+    },
+
+    tokens: [
+      {
+        access: {
+          type: String,
+          required: true
+        },
+        token: {
+          type: String,
+          required: true
+        }
+      }
+    ]
+  },
+  {
+    usePushEach: true
+  }
+);
+
+UserSchema.methods.toJSON = function() {
+  let user = this;
+
+  let userObject = user.toObject();
+
+  return _.pick(userObject, ['_id', 'email']);
+};
 
 UserSchema.methods.generateAuthToken = function() {
   let user = this;
@@ -48,6 +64,8 @@ UserSchema.methods.generateAuthToken = function() {
 
   user.tokens.push({access, token});
 
+  // user.tokens = user.tokens.concat([{ access, token }]);
+
   console.log(user);
 
   return user
@@ -57,6 +75,25 @@ UserSchema.methods.generateAuthToken = function() {
             return token;
           })
           .catch(e => console.log(e)); 
+
+};
+
+UserSchema.statics.findByToken = function (token){
+  let User = this;
+
+  let decoded;
+  try{
+    decoded = jwt.verify(token, 'abc123'); 
+    console.log(decoded);
+  }catch (e){
+    return Promise.reject();
+  }
+
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
 
 };
 
