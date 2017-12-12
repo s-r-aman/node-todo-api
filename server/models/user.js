@@ -56,23 +56,13 @@ UserSchema.methods.generateAuthToken = function() {
   let user = this;
   let access = 'auth';
 
-  console.log('Entered the token invoke');
-  console.log(user);
-
   let token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
   
-  console.log(token);
-
   user.tokens.push({access, token});
-
-  // user.tokens = user.tokens.concat([{ access, token }]);
-
-  console.log(user);
 
   return user
           .save()
           .then(() => {
-            console.log('Saved user with token successfully, returning the token');
             return token;
           })
           .catch(e => console.log(e)); 
@@ -85,7 +75,6 @@ UserSchema.statics.findByToken = function (token){
   let decoded;
   try{
     decoded = jwt.verify(token, 'abc123'); 
-    console.log(decoded);
   }catch (e){
     return Promise.reject();
   }
@@ -102,13 +91,19 @@ UserSchema.pre('save', function(next){
   let user = this;
   let password = user.password;
 
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(password, salt, (err, hash) => {
-      user.password = hash;
-      next();
+  if(user.isModified('password')){
+  
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(password, salt, (err, hash) => {
+        user.password = hash;
+        next();
+      });
     });
-  });
 
+  }else{
+    next();
+  }
+  
 });
 
 let User = mongoose.model("User", UserSchema);

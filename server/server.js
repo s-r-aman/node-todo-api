@@ -91,29 +91,22 @@ app.post('/users', (req, res) => {
 
     let body = _.pick(req.body, ['email', 'password']);
 
-    console.log(body);
-
     let newUser = new User(body);
-
-    console.log(newUser);
 
     newUser
         .save()
         .then(() => {
-            console.log('saved without token');
             return newUser.generateAuthToken();
         })
         .then((token) => {
-            console.log(`token is:`, token );
             res.header('x-auth', token).send(newUser);
         })
         .catch(err => {
             res.status(400).send(err);
         });
-
 });
 
-app.post('/users/me', authenticate, (req, res) => {
+app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);    
 });
 

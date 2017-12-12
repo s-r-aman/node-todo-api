@@ -3,27 +3,14 @@ const request = require('supertest');
 
 const {ObjectID} = require('mongodb');
 
+const {User} = require('./../models/user');
 const {app} = require('./../server');
 const {Todo} = require('./../models/todo');
 
-let todo2 = [
-    {
-        text: "Do something",
-        _id: new ObjectID
-    },
-    {
-        text: "Do something 2",
-        _id: new ObjectID,
-        completed: true,
-        completedAt: 333
-    }
-]
+const { todo2, populateTodo, users, populateUsers } = require("./seed/seed");
 
-beforeEach((done) => {
-    Todo.remove({}).then(() => {
-         return Todo.insertMany(todo2);
-    }).then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodo);
 
 describe('POST /todo',() => {
 
@@ -211,4 +198,75 @@ describe('PATCH /todo/:id', () => {
 
     });
 
+});
+
+describe('Get /users /me', () => {
+    
+   it('Should return a valid user', (done) => {
+
+        request(app)
+          .get("/users/me")
+          .set("x-auth", users[0].tokens[0].token)
+          .expect(200)
+          .expect(result => {
+            expect(result.body.email).toBe(users[0].email);
+          })
+          .end(done);
+
+    });
+
+    it("Should return a 401 invalid user", done => {
+
+      request(app)
+        .get("/users/me")
+        .expect(401)
+        .expect(result => {
+          expect(result.body).toEqual({});
+        })
+        .end(done);
+    });
+
+});
+
+describe('POST /users', () => {
+
+    it('Should create a user',(done) => {
+       
+        request(app)
+        .post("/users")
+        .send({
+            email: "abczy@test.com",
+            password: "123456"
+        })
+        .expect(200)
+        .expect(res => {
+            expect(res.body.email).toBe("abczy@test.com");
+            expect(res.body._id).toExist();
+            expect(res.header['x-auth']).toExist();
+        })
+        .end(done);
+
+    });
+
+    it('Should return 400 for invalid user request', (done) => {
+        
+        let email = 'ab';
+        let pass = 'pass';
+        request(app)
+            .post('/users')
+            .send({email, pass})
+            .expect(400)
+            .end(done);
+    });
+
+    it("Should return 400 for taken user email request", done => {
+      let email = "userone@test.com";
+      let pass = "pssass";
+      request(app)
+        .post("/users")
+        .send({ email, pass })
+        .expect(400)
+        .end(done);
+    });
+    
 });
