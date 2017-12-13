@@ -17,6 +17,8 @@ const port = process.env.PORT;
 app.use(bodyParser.json());
 
 app.post('/todo', (req, res) => {
+
+    debugger;
     let newTodo = new Todo({
         text: req.body.text
     });
@@ -124,6 +126,14 @@ app.post('/users/login', (req, res) => {
         });
     }).catch((err) => res.status(400).send());
 
+});
+
+//logout route
+
+app.delete('/users/me/token', authenticate, (req, res) =>{
+    req.user.removeToken(req.token).then(() =>{
+        res.status(200).send();
+    }).catch(() => res.status(400).send());
 });
 
 app.listen(3000, () => console.log(`Started on port ${port}`));
