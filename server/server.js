@@ -16,11 +16,12 @@ const port = process.env.PORT;
 
 app.use(bodyParser.json());
 
-app.post('/todo', (req, res) => {
+//Create a new todo
+app.post('/todo', authenticate, (req, res) => {
 
-    debugger;
     let newTodo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
 
     newTodo
@@ -30,21 +31,22 @@ app.post('/todo', (req, res) => {
 
 });
 
-
-app.get('/todo', (req, res) => {
+//Get all todo
+app.get('/todo', authenticate,(req, res) => {
     Todo
-        .find()
+        .find({_creator: req.user._id})
         .then(todo => res.status(200).send({todo}))
         .catch(e => console.log(e));
 });
 
-app.get('/todo/:id', (req, res) => {
+//Get a single todo
+app.get('/todo/:id',authenticate, (req, res) => {
 
     let id = req.params.id;
 
     if(!ObjectID.isValid(id)) return res.status(404).send('Bad Request');
  
-    Todo.findById(id).then((todo) => {
+    Todo.findOne({_id: id, _creator: req.user._id}).then((todo) => {
         if(todo === null){
             return res.status(404).send("Bad Request");
         }
@@ -52,13 +54,14 @@ app.get('/todo/:id', (req, res) => {
     }).catch((err) => res.status(400));
 });
 
-app.delete('/todo/:id', (req, res) => {
+//Deleting single todo
+app.delete('/todo/:id', authenticate, (req, res) => {
 
     let id = req.params.id;
 
     if(!ObjectID.isValid(id)) return res.status(404).send('Bad request');
 
-    Todo.findByIdAndRemove(id).then((todo) => {
+    Todo.findOneAndRemove({_id:id, _creator: req.user._id}).then((todo) => {
         if(todo === null) return res.status(404).send('Bad request');
 
         res.send({todo});
@@ -66,7 +69,8 @@ app.delete('/todo/:id', (req, res) => {
 
 });
 
-app.patch('/todo/:id', (req, res) => {
+//Updating single todo 
+app.patch('/todo/:id',authenticate, (req, res) => {
     
     let id = req.params.id;
     let body = _.pick(req.body, ['text', 'completed']);
@@ -81,7 +85,7 @@ app.patch('/todo/:id', (req, res) => {
     }
 
 
-    Todo.findByIdAndUpdate(id, {$set:body}, {new: true}).then(todo => {
+    Todo.findOneAndUpdate({_id: id, _creator: req.user._id}, {$set:body}, {new: true}).then(todo => {
         
         if(!todo) return res.status(404).send();
         res.send({todo});
@@ -89,6 +93,7 @@ app.patch('/todo/:id', (req, res) => {
 
 });
 
+//Signup route
 app.post('/users', (req, res) => {
 
     let body = _.pick(req.body, ['email', 'password']);

@@ -9,29 +9,42 @@ const userTwoId = new ObjectID();
 
 console.log(userOneId);
 
-let users = [{
-    '_id': userOneId,
-    'email': 'userone@test.com',
-    'password': 'useronepass',
-    'tokens': [{
-        access: 'auth',
-        token: jwt.sign({_id: userOneId, access: 'auth'}, 'abc123').toString()
-    }]
-},{
-    '_id': userTwoId,
-    'email': 'usertwoemail@gmail.com',
-    'password': 'usertwopass'
-}];
+let users = [
+  {
+    _id: userOneId,
+    email: "userone@test.com",
+    password: "useronepass",
+    tokens: [
+      {
+        access: "auth",
+        token: jwt.sign({ _id: userOneId, access: "auth" }, "abc123").toString()
+      }
+    ]
+  },
+  {
+    _id: userTwoId,
+    email: "usertwoemail@gmail.com",
+    password: "usertwopass",
+    tokens: [
+      {
+        access: "auth",
+        token: jwt.sign({ _id: userTwoId, access: "auth" }, "abc123").toString()
+      }
+    ]
+  }
+];
 
 let todo2 = [
   {
     text: "Do something",
-    _id: new ObjectID()
+    _id: new ObjectID(),
+    _creator: userOneId
   },
   {
     text: "Do something 2",
     _id: new ObjectID(),
     completed: true,
+    _creator: userTwoId,
     completedAt: 333
   }
 ];
